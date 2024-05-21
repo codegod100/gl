@@ -96,12 +96,12 @@ var BitArray = class _BitArray {
     return byteArrayToFloat(this.buffer.slice(index3, index3 + 8));
   }
   // @internal
-  intFromSlice(start4, end) {
-    return byteArrayToInt(this.buffer.slice(start4, end));
+  intFromSlice(start5, end) {
+    return byteArrayToInt(this.buffer.slice(start5, end));
   }
   // @internal
-  binaryFromSlice(start4, end) {
-    return new _BitArray(this.buffer.slice(start4, end));
+  binaryFromSlice(start5, end) {
+    return new _BitArray(this.buffer.slice(start5, end));
   }
   // @internal
   sliceAfter(index3) {
@@ -216,16 +216,6 @@ function structurallyCompatibleObjects(a, b) {
     return false;
   return a.constructor === b.constructor;
 }
-function makeError(variant, module, line, fn, message, extra) {
-  let error = new globalThis.Error(message);
-  error.gleam_error = variant;
-  error.module = module;
-  error.line = line;
-  error.fn = fn;
-  for (let k in extra)
-    error[k] = extra[k];
-  return error;
-}
 
 // build/dev/javascript/gleam_stdlib/gleam/option.mjs
 var Some = class extends CustomType {
@@ -296,6 +286,358 @@ function compile(pattern, options) {
 }
 function scan(regex, string3) {
   return regex_scan(regex, string3);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/int.mjs
+function parse(string3) {
+  return parse_int(string3);
+}
+function to_string2(x) {
+  return to_string(x);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/pair.mjs
+function second(pair) {
+  let a = pair[1];
+  return a;
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/list.mjs
+function do_reverse(loop$remaining, loop$accumulator) {
+  while (true) {
+    let remaining = loop$remaining;
+    let accumulator = loop$accumulator;
+    if (remaining.hasLength(0)) {
+      return accumulator;
+    } else {
+      let item = remaining.head;
+      let rest$1 = remaining.tail;
+      loop$remaining = rest$1;
+      loop$accumulator = prepend(item, accumulator);
+    }
+  }
+}
+function reverse(xs) {
+  return do_reverse(xs, toList([]));
+}
+function first(list2) {
+  if (list2.hasLength(0)) {
+    return new Error(void 0);
+  } else {
+    let x = list2.head;
+    return new Ok(x);
+  }
+}
+function do_map(loop$list, loop$fun, loop$acc) {
+  while (true) {
+    let list2 = loop$list;
+    let fun = loop$fun;
+    let acc = loop$acc;
+    if (list2.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let x = list2.head;
+      let xs = list2.tail;
+      loop$list = xs;
+      loop$fun = fun;
+      loop$acc = prepend(fun(x), acc);
+    }
+  }
+}
+function map2(list2, fun) {
+  return do_map(list2, fun, toList([]));
+}
+function do_try_map(loop$list, loop$fun, loop$acc) {
+  while (true) {
+    let list2 = loop$list;
+    let fun = loop$fun;
+    let acc = loop$acc;
+    if (list2.hasLength(0)) {
+      return new Ok(reverse(acc));
+    } else {
+      let x = list2.head;
+      let xs = list2.tail;
+      let $ = fun(x);
+      if ($.isOk()) {
+        let y = $[0];
+        loop$list = xs;
+        loop$fun = fun;
+        loop$acc = prepend(y, acc);
+      } else {
+        let error = $[0];
+        return new Error(error);
+      }
+    }
+  }
+}
+function try_map(list2, fun) {
+  return do_try_map(list2, fun, toList([]));
+}
+function do_append(loop$first, loop$second) {
+  while (true) {
+    let first2 = loop$first;
+    let second2 = loop$second;
+    if (first2.hasLength(0)) {
+      return second2;
+    } else {
+      let item = first2.head;
+      let rest$1 = first2.tail;
+      loop$first = rest$1;
+      loop$second = prepend(item, second2);
+    }
+  }
+}
+function append(first2, second2) {
+  return do_append(reverse(first2), second2);
+}
+function reverse_and_prepend(loop$prefix, loop$suffix) {
+  while (true) {
+    let prefix = loop$prefix;
+    let suffix = loop$suffix;
+    if (prefix.hasLength(0)) {
+      return suffix;
+    } else {
+      let first$1 = prefix.head;
+      let rest$1 = prefix.tail;
+      loop$prefix = rest$1;
+      loop$suffix = prepend(first$1, suffix);
+    }
+  }
+}
+function do_concat(loop$lists, loop$acc) {
+  while (true) {
+    let lists = loop$lists;
+    let acc = loop$acc;
+    if (lists.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let list2 = lists.head;
+      let further_lists = lists.tail;
+      loop$lists = further_lists;
+      loop$acc = reverse_and_prepend(list2, acc);
+    }
+  }
+}
+function concat(lists) {
+  return do_concat(lists, toList([]));
+}
+function fold(loop$list, loop$initial, loop$fun) {
+  while (true) {
+    let list2 = loop$list;
+    let initial = loop$initial;
+    let fun = loop$fun;
+    if (list2.hasLength(0)) {
+      return initial;
+    } else {
+      let x = list2.head;
+      let rest$1 = list2.tail;
+      loop$list = rest$1;
+      loop$initial = fun(initial, x);
+      loop$fun = fun;
+    }
+  }
+}
+function do_repeat(loop$a, loop$times, loop$acc) {
+  while (true) {
+    let a = loop$a;
+    let times = loop$times;
+    let acc = loop$acc;
+    let $ = times <= 0;
+    if ($) {
+      return acc;
+    } else {
+      loop$a = a;
+      loop$times = times - 1;
+      loop$acc = prepend(a, acc);
+    }
+  }
+}
+function repeat(a, times) {
+  return do_repeat(a, times, toList([]));
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/result.mjs
+function map3(result, fun) {
+  if (result.isOk()) {
+    let x = result[0];
+    return new Ok(fun(x));
+  } else {
+    let e = result[0];
+    return new Error(e);
+  }
+}
+function map_error(result, fun) {
+  if (result.isOk()) {
+    let x = result[0];
+    return new Ok(x);
+  } else {
+    let error = result[0];
+    return new Error(fun(error));
+  }
+}
+function try$(result, fun) {
+  if (result.isOk()) {
+    let x = result[0];
+    return fun(x);
+  } else {
+    let e = result[0];
+    return new Error(e);
+  }
+}
+function then$(result, fun) {
+  return try$(result, fun);
+}
+function unwrap2(result, default$) {
+  if (result.isOk()) {
+    let v = result[0];
+    return v;
+  } else {
+    return default$;
+  }
+}
+function nil_error(result) {
+  return map_error(result, (_) => {
+    return void 0;
+  });
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/string_builder.mjs
+function from_strings(strings) {
+  return concat2(strings);
+}
+function to_string3(builder) {
+  return identity(builder);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/dynamic.mjs
+var DecodeError = class extends CustomType {
+  constructor(expected, found, path) {
+    super();
+    this.expected = expected;
+    this.found = found;
+    this.path = path;
+  }
+};
+function from(a) {
+  return identity(a);
+}
+function string(data) {
+  return decode_string(data);
+}
+function classify(data) {
+  return classify_dynamic(data);
+}
+function int(data) {
+  return decode_int(data);
+}
+function shallow_list(value) {
+  return decode_list(value);
+}
+function any(decoders) {
+  return (data) => {
+    if (decoders.hasLength(0)) {
+      return new Error(
+        toList([new DecodeError("another type", classify(data), toList([]))])
+      );
+    } else {
+      let decoder = decoders.head;
+      let decoders$1 = decoders.tail;
+      let $ = decoder(data);
+      if ($.isOk()) {
+        let decoded = $[0];
+        return new Ok(decoded);
+      } else {
+        return any(decoders$1)(data);
+      }
+    }
+  };
+}
+function all_errors(result) {
+  if (result.isOk()) {
+    return toList([]);
+  } else {
+    let errors = result[0];
+    return errors;
+  }
+}
+function push_path(error, name) {
+  let name$1 = from(name);
+  let decoder = any(
+    toList([string, (x) => {
+      return map3(int(x), to_string2);
+    }])
+  );
+  let name$2 = (() => {
+    let $ = decoder(name$1);
+    if ($.isOk()) {
+      let name$22 = $[0];
+      return name$22;
+    } else {
+      let _pipe = toList(["<", classify(name$1), ">"]);
+      let _pipe$1 = from_strings(_pipe);
+      return to_string3(_pipe$1);
+    }
+  })();
+  return error.withFields({ path: prepend(name$2, error.path) });
+}
+function list(decoder_type) {
+  return (dynamic) => {
+    return try$(
+      shallow_list(dynamic),
+      (list2) => {
+        let _pipe = list2;
+        let _pipe$1 = try_map(_pipe, decoder_type);
+        return map_errors(
+          _pipe$1,
+          (_capture) => {
+            return push_path(_capture, "*");
+          }
+        );
+      }
+    );
+  };
+}
+function map_errors(result, f) {
+  return map_error(
+    result,
+    (_capture) => {
+      return map2(_capture, f);
+    }
+  );
+}
+function field(name, inner_type) {
+  return (value) => {
+    let missing_field_error = new DecodeError("field", "nothing", toList([]));
+    return try$(
+      decode_field(value, name),
+      (maybe_inner) => {
+        let _pipe = maybe_inner;
+        let _pipe$1 = to_result(_pipe, toList([missing_field_error]));
+        let _pipe$2 = try$(_pipe$1, inner_type);
+        return map_errors(
+          _pipe$2,
+          (_capture) => {
+            return push_path(_capture, name);
+          }
+        );
+      }
+    );
+  };
+}
+function decode2(constructor, t1, t2) {
+  return (value) => {
+    let $ = t1(value);
+    let $1 = t2(value);
+    if ($.isOk() && $1.isOk()) {
+      let a = $[0];
+      let b = $1[0];
+      return new Ok(constructor(a, b));
+    } else {
+      let a = $;
+      let b = $1;
+      return new Error(concat(toList([all_errors(a), all_errors(b)])));
+    }
+  };
 }
 
 // build/dev/javascript/gleam_stdlib/dict.mjs
@@ -1043,7 +1385,7 @@ function join(xs, separator) {
   }
   return result;
 }
-function concat(xs) {
+function concat2(xs) {
   let result = "";
   for (const x of xs) {
     result = result + x;
@@ -1243,358 +1585,6 @@ function inspectBitArray(bits) {
 }
 function inspectUtfCodepoint(codepoint2) {
   return `//utfcodepoint(${String.fromCodePoint(codepoint2.value)})`;
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/int.mjs
-function parse(string3) {
-  return parse_int(string3);
-}
-function to_string2(x) {
-  return to_string(x);
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/pair.mjs
-function second(pair) {
-  let a = pair[1];
-  return a;
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/list.mjs
-function do_reverse(loop$remaining, loop$accumulator) {
-  while (true) {
-    let remaining = loop$remaining;
-    let accumulator = loop$accumulator;
-    if (remaining.hasLength(0)) {
-      return accumulator;
-    } else {
-      let item = remaining.head;
-      let rest$1 = remaining.tail;
-      loop$remaining = rest$1;
-      loop$accumulator = prepend(item, accumulator);
-    }
-  }
-}
-function reverse(xs) {
-  return do_reverse(xs, toList([]));
-}
-function first(list2) {
-  if (list2.hasLength(0)) {
-    return new Error(void 0);
-  } else {
-    let x = list2.head;
-    return new Ok(x);
-  }
-}
-function do_map(loop$list, loop$fun, loop$acc) {
-  while (true) {
-    let list2 = loop$list;
-    let fun = loop$fun;
-    let acc = loop$acc;
-    if (list2.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let x = list2.head;
-      let xs = list2.tail;
-      loop$list = xs;
-      loop$fun = fun;
-      loop$acc = prepend(fun(x), acc);
-    }
-  }
-}
-function map2(list2, fun) {
-  return do_map(list2, fun, toList([]));
-}
-function do_try_map(loop$list, loop$fun, loop$acc) {
-  while (true) {
-    let list2 = loop$list;
-    let fun = loop$fun;
-    let acc = loop$acc;
-    if (list2.hasLength(0)) {
-      return new Ok(reverse(acc));
-    } else {
-      let x = list2.head;
-      let xs = list2.tail;
-      let $ = fun(x);
-      if ($.isOk()) {
-        let y = $[0];
-        loop$list = xs;
-        loop$fun = fun;
-        loop$acc = prepend(y, acc);
-      } else {
-        let error = $[0];
-        return new Error(error);
-      }
-    }
-  }
-}
-function try_map(list2, fun) {
-  return do_try_map(list2, fun, toList([]));
-}
-function do_append(loop$first, loop$second) {
-  while (true) {
-    let first2 = loop$first;
-    let second2 = loop$second;
-    if (first2.hasLength(0)) {
-      return second2;
-    } else {
-      let item = first2.head;
-      let rest$1 = first2.tail;
-      loop$first = rest$1;
-      loop$second = prepend(item, second2);
-    }
-  }
-}
-function append(first2, second2) {
-  return do_append(reverse(first2), second2);
-}
-function reverse_and_prepend(loop$prefix, loop$suffix) {
-  while (true) {
-    let prefix = loop$prefix;
-    let suffix = loop$suffix;
-    if (prefix.hasLength(0)) {
-      return suffix;
-    } else {
-      let first$1 = prefix.head;
-      let rest$1 = prefix.tail;
-      loop$prefix = rest$1;
-      loop$suffix = prepend(first$1, suffix);
-    }
-  }
-}
-function do_concat(loop$lists, loop$acc) {
-  while (true) {
-    let lists = loop$lists;
-    let acc = loop$acc;
-    if (lists.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let list2 = lists.head;
-      let further_lists = lists.tail;
-      loop$lists = further_lists;
-      loop$acc = reverse_and_prepend(list2, acc);
-    }
-  }
-}
-function concat2(lists) {
-  return do_concat(lists, toList([]));
-}
-function fold(loop$list, loop$initial, loop$fun) {
-  while (true) {
-    let list2 = loop$list;
-    let initial = loop$initial;
-    let fun = loop$fun;
-    if (list2.hasLength(0)) {
-      return initial;
-    } else {
-      let x = list2.head;
-      let rest$1 = list2.tail;
-      loop$list = rest$1;
-      loop$initial = fun(initial, x);
-      loop$fun = fun;
-    }
-  }
-}
-function do_repeat(loop$a, loop$times, loop$acc) {
-  while (true) {
-    let a = loop$a;
-    let times = loop$times;
-    let acc = loop$acc;
-    let $ = times <= 0;
-    if ($) {
-      return acc;
-    } else {
-      loop$a = a;
-      loop$times = times - 1;
-      loop$acc = prepend(a, acc);
-    }
-  }
-}
-function repeat(a, times) {
-  return do_repeat(a, times, toList([]));
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/result.mjs
-function map3(result, fun) {
-  if (result.isOk()) {
-    let x = result[0];
-    return new Ok(fun(x));
-  } else {
-    let e = result[0];
-    return new Error(e);
-  }
-}
-function map_error(result, fun) {
-  if (result.isOk()) {
-    let x = result[0];
-    return new Ok(x);
-  } else {
-    let error = result[0];
-    return new Error(fun(error));
-  }
-}
-function try$(result, fun) {
-  if (result.isOk()) {
-    let x = result[0];
-    return fun(x);
-  } else {
-    let e = result[0];
-    return new Error(e);
-  }
-}
-function then$(result, fun) {
-  return try$(result, fun);
-}
-function unwrap2(result, default$) {
-  if (result.isOk()) {
-    let v = result[0];
-    return v;
-  } else {
-    return default$;
-  }
-}
-function nil_error(result) {
-  return map_error(result, (_) => {
-    return void 0;
-  });
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/string_builder.mjs
-function from_strings(strings) {
-  return concat(strings);
-}
-function to_string3(builder) {
-  return identity(builder);
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/dynamic.mjs
-var DecodeError = class extends CustomType {
-  constructor(expected, found, path) {
-    super();
-    this.expected = expected;
-    this.found = found;
-    this.path = path;
-  }
-};
-function from(a) {
-  return identity(a);
-}
-function string(data) {
-  return decode_string(data);
-}
-function classify(data) {
-  return classify_dynamic(data);
-}
-function int(data) {
-  return decode_int(data);
-}
-function shallow_list(value) {
-  return decode_list(value);
-}
-function any(decoders) {
-  return (data) => {
-    if (decoders.hasLength(0)) {
-      return new Error(
-        toList([new DecodeError("another type", classify(data), toList([]))])
-      );
-    } else {
-      let decoder = decoders.head;
-      let decoders$1 = decoders.tail;
-      let $ = decoder(data);
-      if ($.isOk()) {
-        let decoded = $[0];
-        return new Ok(decoded);
-      } else {
-        return any(decoders$1)(data);
-      }
-    }
-  };
-}
-function all_errors(result) {
-  if (result.isOk()) {
-    return toList([]);
-  } else {
-    let errors = result[0];
-    return errors;
-  }
-}
-function push_path(error, name) {
-  let name$1 = from(name);
-  let decoder = any(
-    toList([string, (x) => {
-      return map3(int(x), to_string2);
-    }])
-  );
-  let name$2 = (() => {
-    let $ = decoder(name$1);
-    if ($.isOk()) {
-      let name$22 = $[0];
-      return name$22;
-    } else {
-      let _pipe = toList(["<", classify(name$1), ">"]);
-      let _pipe$1 = from_strings(_pipe);
-      return to_string3(_pipe$1);
-    }
-  })();
-  return error.withFields({ path: prepend(name$2, error.path) });
-}
-function list(decoder_type) {
-  return (dynamic) => {
-    return try$(
-      shallow_list(dynamic),
-      (list2) => {
-        let _pipe = list2;
-        let _pipe$1 = try_map(_pipe, decoder_type);
-        return map_errors(
-          _pipe$1,
-          (_capture) => {
-            return push_path(_capture, "*");
-          }
-        );
-      }
-    );
-  };
-}
-function map_errors(result, f) {
-  return map_error(
-    result,
-    (_capture) => {
-      return map2(_capture, f);
-    }
-  );
-}
-function field(name, inner_type) {
-  return (value) => {
-    let missing_field_error = new DecodeError("field", "nothing", toList([]));
-    return try$(
-      decode_field(value, name),
-      (maybe_inner) => {
-        let _pipe = maybe_inner;
-        let _pipe$1 = to_result(_pipe, toList([missing_field_error]));
-        let _pipe$2 = try$(_pipe$1, inner_type);
-        return map_errors(
-          _pipe$2,
-          (_capture) => {
-            return push_path(_capture, name);
-          }
-        );
-      }
-    );
-  };
-}
-function decode2(constructor, t1, t2) {
-  return (value) => {
-    let $ = t1(value);
-    let $1 = t2(value);
-    if ($.isOk() && $1.isOk()) {
-      let a = $[0];
-      let b = $1[0];
-      return new Ok(constructor(a, b));
-    } else {
-      let a = $;
-      let b = $1;
-      return new Error(concat2(toList([all_errors(a), all_errors(b)])));
-    }
-  };
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/string.mjs
@@ -2970,12 +2960,13 @@ function prompt() {
 
 // build/dev/javascript/gl/gl.mjs
 var Model = class extends CustomType {
-  constructor(count, cat, loader, user) {
+  constructor(count, cat, loader, user, verified) {
     super();
     this.count = count;
     this.cat = cat;
     this.loader = loader;
     this.user = user;
+    this.verified = verified;
   }
 };
 var Cat = class extends CustomType {
@@ -3008,6 +2999,13 @@ var UserSignIn = class extends CustomType {
 var UserSignOut = class extends CustomType {
 };
 var CacheUpdatedMessage = class extends CustomType {
+  constructor(x0, x1) {
+    super();
+    this[0] = x0;
+    this[1] = x1;
+  }
+};
+var UserCheckVerify = class extends CustomType {
   constructor(x0) {
     super();
     this[0] = x0;
@@ -3019,10 +3017,34 @@ var ApiReturnedCat = class extends CustomType {
     this[0] = x0;
   }
 };
+function main() {
+  return (_capture) => {
+    return new Ok(_capture);
+  };
+}
+function read_localstorage2(key) {
+  return batch(
+    toList([
+      from2(
+        (dispatch) => {
+          let value = read_localstorage(key);
+          let _pipe = new CacheUpdatedMessage(key, value);
+          return dispatch(_pipe);
+        }
+      )
+    ])
+  );
+}
 function write_localstorage2(key, value) {
   return from2((_) => {
     return write_localstorage(key, value);
   });
+}
+function init2(_) {
+  return [
+    new Model(0, new Cat("", toList([""])), false, new User(""), false),
+    batch(toList([read_localstorage2("user"), read_localstorage2("cat")]))
+  ];
 }
 function get_cat() {
   let decoder = decode2(
@@ -3039,26 +3061,6 @@ function get_cat() {
     }
   );
   return get2("https://cataas.com/cat?json=true", expect);
-}
-function read_localstorage2(key) {
-  return batch(
-    toList([
-      from2(
-        (dispatch) => {
-          let _pipe = read_localstorage(key);
-          let _pipe$1 = new CacheUpdatedMessage(_pipe);
-          return dispatch(_pipe$1);
-        }
-      ),
-      get_cat()
-    ])
-  );
-}
-function init2(_) {
-  return [
-    new Model(0, new Cat("666", toList([""])), true, new User("")),
-    read_localstorage2("user")
-  ];
 }
 function sign_in(name) {
   return batch(toList([get_cat(), write_localstorage2("user", name)]));
@@ -3089,7 +3091,10 @@ function update2(model, msg) {
     if ($.hasLength(0)) {
       return [model, get_cat()];
     } else {
-      return [model.withFields({ cat, loader: false }), none()];
+      return [
+        model.withFields({ cat, loader: false }),
+        write_localstorage2("cat", cat.id)
+      ];
     }
   } else if (msg instanceof ApiReturnedCat && !msg[0].isOk()) {
     let err = msg[0][0];
@@ -3100,11 +3105,24 @@ function update2(model, msg) {
   } else if (msg instanceof Decrement) {
     let x = msg.x;
     return [model.withFields({ count: model.count - x }), none()];
-  } else if (msg instanceof CacheUpdatedMessage && msg[0].isOk()) {
-    let message = msg[0][0];
-    return [model.withFields({ user: new User(message) }), none()];
-  } else {
+  } else if (msg instanceof CacheUpdatedMessage && msg[1].isOk()) {
+    let key = msg[0];
+    let message = msg[1][0];
+    if (key === "user") {
+      return [model.withFields({ user: new User(message) }), none()];
+    } else if (key === "cat") {
+      return [
+        model.withFields({ cat: new Cat(message, toList([])) }),
+        none()
+      ];
+    } else {
+      return [model, none()];
+    }
+  } else if (msg instanceof CacheUpdatedMessage && !msg[1].isOk()) {
     return [model, none()];
+  } else {
+    let val = msg[0];
+    return [model.withFields({ verified: val }), none()];
   }
 }
 function view(model) {
@@ -3133,7 +3151,7 @@ function view(model) {
           toList([
             div(
               toList([class$("p-1")]),
-              toList([text("Hello " + name)])
+              toList([text("Jello " + name)])
             ),
             button(
               toList([
@@ -3196,21 +3214,25 @@ function view(model) {
     );
   }
 }
-function main() {
+function start4(selector) {
   let app = application(init2, update2, view);
-  let $ = start3(app, "#app", void 0);
-  if (!$.isOk()) {
-    throw makeError(
-      "assignment_no_match",
-      "gl",
-      15,
-      "main",
-      "Assignment pattern did not match",
-      { value: $ }
-    );
-  }
-  return void 0;
+  return start3(app, selector, void 0);
 }
-
-// build/.lustre/entry.mjs
-main();
+export {
+  ApiReturnedCat,
+  CacheUpdatedMessage,
+  Cat,
+  Decrement,
+  Increment,
+  Model,
+  User,
+  UserCheckVerify,
+  UserClearCat,
+  UserGetCat,
+  UserSignIn,
+  UserSignOut,
+  main,
+  start4 as start,
+  update2 as update,
+  view
+};

@@ -1,6 +1,8 @@
+import gleam/bit_array
 import gleam/dynamic
 import gleam/int
 import gleam/io
+import gleam/list
 import gleam/string
 import lustre
 import lustre/attribute
@@ -11,20 +13,26 @@ import lustre/event
 import lustre_http
 
 pub fn main() {
-  let app = lustre.application(init, update, view)
-  let assert Ok(_) = lustre.start(app, "#app", Nil)
+  // let v = verify()
+  // use valid <- promise.await(v)
+  // let assert Ok(_) = lustre.start(app, "#app", valid)
 
-  Nil
+  // v
+  Ok(_)
+}
+
+pub fn start(selector) {
+  let app = lustre.application(init, update, view)
+  lustre.start(app, selector, Nil)
 }
 
 fn read_localstorage(key: String) -> effect.Effect(Msg) {
   effect.batch([
     effect.from(fn(dispatch) {
-      do_read_localstorage(key)
-      |> CacheUpdatedMessage
+      let value = do_read_localstorage(key)
+      CacheUpdatedMessage(key, value)
       |> dispatch
     }),
-    get_cat(),
   ])
 }
 
@@ -34,9 +42,7 @@ fn do_read_localstorage(_key: String) -> Result(String, Nil) {
 }
 
 @external(javascript, "./gl.ffi.mjs", "prompt")
-fn prompt() -> String {
-  ""
-}
+fn prompt() -> String
 
 fn write_localstorage(key: String, value: String) -> effect.Effect(msg) {
   effect.from(fn(_) { do_write_localstorage(key, value) })
@@ -48,7 +54,7 @@ fn do_write_localstorage(_key: String, _value: String) -> Nil {
 }
 
 pub type Model {
-  Model(count: Int, cat: Cat, loader: Bool, user: User)
+  Model(count: Int, cat: Cat, loader: Bool, user: User, verified: Bool)
 }
 
 pub type Cat {
@@ -60,7 +66,13 @@ pub type User {
 }
 
 fn init(_flags) -> #(Model, effect.Effect(Msg)) {
-  #(Model(0, Cat("666", [""]), True, User("")), read_localstorage("user"))
+  // io.debug(out)
+  // io.debug("yolo")
+  // io.debug(is_valid(p, sig, "yolo"))
+  #(
+    Model(0, Cat("", [""]), False, User(""), False),
+    effect.batch([read_localstorage("user"), read_localstorage("cat")]),
+  )
 }
 
 pub type Msg {
@@ -70,7 +82,8 @@ pub type Msg {
   UserClearCat
   UserSignIn
   UserSignOut
-  CacheUpdatedMessage(Result(String, Nil))
+  CacheUpdatedMessage(String, Result(String, Nil))
+  UserCheckVerify(Bool)
   ApiReturnedCat(Result(Cat, lustre_http.HttpError))
 }
 
@@ -94,7 +107,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       io.debug(cat)
       case cat.tags {
         [] -> #(model, get_cat())
-        _ -> #(Model(..model, cat: cat, loader: False), effect.none())
+        _ -> #(
+          Model(..model, cat: cat, loader: False),
+          write_localstorage("cat", cat.id),
+        )
       }
     }
     ApiReturnedCat(Error(err)) -> {
@@ -103,11 +119,14 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
     Increment -> #(Model(..model, count: model.count + 42), effect.none())
     Decrement(x) -> #(Model(..model, count: model.count - x), effect.none())
-    CacheUpdatedMessage(Ok(message)) -> #(
-      Model(..model, user: User(message)),
-      effect.none(),
-    )
-    CacheUpdatedMessage(Error(_)) -> #(model, effect.none())
+    CacheUpdatedMessage(key, Ok(message)) ->
+      case key {
+        "user" -> #(Model(..model, user: User(message)), effect.none())
+        "cat" -> #(Model(..model, cat: Cat(message, [])), effect.none())
+        _ -> #(model, effect.none())
+      }
+    CacheUpdatedMessage(_key, Error(_)) -> #(model, effect.none())
+    UserCheckVerify(val) -> #(Model(..model, verified: val), effect.none())
   }
 }
 
@@ -136,7 +155,7 @@ pub fn view(model: Model) -> element.Element(Msg) {
     name ->
       html.div([], [
         html.div([attribute.class("flex")], [
-          html.div([attribute.class("p-1")], [element.text("Hello " <> name)]),
+          html.div([attribute.class("p-1")], [element.text("Jello " <> name)]),
           html.button(
             [
               event.on_click(UserSignOut),
