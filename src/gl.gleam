@@ -2,6 +2,8 @@ import gleam/bit_array
 import gleam/dynamic
 import gleam/int
 import gleam/io
+import gleam/javascript/array
+import gleam/json
 import gleam/list
 import gleam/string
 import lustre
@@ -12,18 +14,32 @@ import lustre/element/html
 import lustre/event
 import lustre_http
 
-pub fn main() {
-  // let v = verify()
-  // use valid <- promise.await(v)
-  // let assert Ok(_) = lustre.start(app, "#app", valid)
-
-  // v
-  Ok(_)
+pub fn start(selector: String, cb: fn(Model) -> Nil) {
+  let app = lustre.application(init, update, view)
+  lustre.start(app, selector, cb)
 }
 
-pub fn start(selector) {
-  let app = lustre.application(init, update, view)
-  lustre.start(app, selector, Nil)
+pub fn convert_cat(cat: Cat) -> #(String, array.Array(String)) {
+  #(cat.id, array.from_list(cat.tags))
+}
+
+fn cat_to_json(cat: Cat) -> String {
+  json.object([
+    #("id", json.string(cat.id)),
+    #("tags", json.array(cat.tags, json.string)),
+  ])
+  |> json.to_string
+}
+
+fn cat_from_json(json_string: String) -> Result(Cat, json.DecodeError) {
+  let cat_decoder =
+    dynamic.decode2(
+      Cat,
+      dynamic.field("id", of: dynamic.string),
+      dynamic.field("tags", of: dynamic.list(dynamic.string)),
+    )
+
+  json.decode(from: json_string, using: cat_decoder)
 }
 
 fn read_localstorage(key: String) -> effect.Effect(Msg) {
@@ -54,7 +70,14 @@ fn do_write_localstorage(_key: String, _value: String) -> Nil {
 }
 
 pub type Model {
-  Model(count: Int, cat: Cat, loader: Bool, user: User, verified: Bool)
+  Model(
+    count: Int,
+    cat: Cat,
+    loader: Bool,
+    user: User,
+    verified: Bool,
+    cb: fn(Model) -> Nil,
+  )
 }
 
 pub type Cat {
@@ -65,13 +88,21 @@ pub type User {
   User(name: String)
 }
 
-fn init(_flags) -> #(Model, effect.Effect(Msg)) {
-  // io.debug(out)
-  // io.debug("yolo")
-  // io.debug(is_valid(p, sig, "yolo"))
+fn init(cb) -> #(Model, effect.Effect(Msg)) {
   #(
-    Model(0, Cat("", [""]), False, User(""), False),
-    effect.batch([read_localstorage("user"), read_localstorage("cat")]),
+    Model(
+      count: 0,
+      cat: Cat("", [""]),
+      loader: False,
+      user: User(""),
+      verified: False,
+      cb: cb,
+    ),
+    effect.batch([
+      read_localstorage("user"),
+      read_localstorage("cat"),
+      read_localstorage("tags"),
+    ]),
   )
 }
 
@@ -109,7 +140,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         [] -> #(model, get_cat())
         _ -> #(
           Model(..model, cat: cat, loader: False),
-          write_localstorage("cat", cat.id),
+          write_localstorage("cat", cat_to_json(cat)),
         )
       }
     }
@@ -122,7 +153,12 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     CacheUpdatedMessage(key, Ok(message)) ->
       case key {
         "user" -> #(Model(..model, user: User(message)), effect.none())
-        "cat" -> #(Model(..model, cat: Cat(message, [])), effect.none())
+        "cat" -> {
+          case cat_from_json(message) {
+            Ok(cat) -> #(Model(..model, cat: cat), effect.none())
+            _ -> #(model, effect.none())
+          }
+        }
         _ -> #(model, effect.none())
       }
     CacheUpdatedMessage(_key, Error(_)) -> #(model, effect.none())
@@ -143,6 +179,7 @@ fn get_cat() -> effect.Effect(Msg) {
 }
 
 pub fn view(model: Model) -> element.Element(Msg) {
+  model.cb(model)
   io.debug(model)
   case model.user.name {
     "" ->
@@ -155,7 +192,7 @@ pub fn view(model: Model) -> element.Element(Msg) {
     name ->
       html.div([], [
         html.div([attribute.class("flex")], [
-          html.div([attribute.class("p-1")], [element.text("Jello " <> name)]),
+          html.div([attribute.class("p-1")], [element.text("Hello " <> name)]),
           html.button(
             [
               event.on_click(UserSignOut),

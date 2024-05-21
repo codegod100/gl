@@ -217,6 +217,36 @@ function structurallyCompatibleObjects(a, b) {
   return a.constructor === b.constructor;
 }
 
+// build/dev/javascript/gleam_javascript/ffi.mjs
+function toArray(list2) {
+  return list2.toArray();
+}
+var PromiseLayer = class _PromiseLayer {
+  constructor(promise) {
+    this.promise = promise;
+  }
+  static wrap(value) {
+    return value instanceof Promise ? new _PromiseLayer(value) : value;
+  }
+  static unwrap(value) {
+    return value instanceof _PromiseLayer ? value.promise : value;
+  }
+};
+function resolve(value) {
+  return Promise.resolve(PromiseLayer.wrap(value));
+}
+function then(promise, fn) {
+  return promise.then((value) => fn(PromiseLayer.unwrap(value)));
+}
+function map_promise(promise, fn) {
+  return promise.then(
+    (value) => PromiseLayer.wrap(fn(PromiseLayer.unwrap(value)))
+  );
+}
+function rescue(promise, fn) {
+  return promise.catch((error) => fn(error));
+}
+
 // build/dev/javascript/gleam_stdlib/gleam/option.mjs
 var Some = class extends CustomType {
   constructor(x0) {
@@ -250,7 +280,7 @@ function unwrap(option, default$) {
     return default$;
   }
 }
-function map(option, fun) {
+function map2(option, fun) {
   if (option instanceof Some) {
     let x = option[0];
     return new Some(fun(x));
@@ -344,7 +374,7 @@ function do_map(loop$list, loop$fun, loop$acc) {
     }
   }
 }
-function map2(list2, fun) {
+function map3(list2, fun) {
   return do_map(list2, fun, toList([]));
 }
 function do_try_map(loop$list, loop$fun, loop$acc) {
@@ -457,7 +487,7 @@ function repeat(a, times) {
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/result.mjs
-function map3(result, fun) {
+function map4(result, fun) {
   if (result.isOk()) {
     let x = result[0];
     return new Ok(fun(x));
@@ -564,7 +594,7 @@ function push_path(error, name) {
   let name$1 = from(name);
   let decoder = any(
     toList([string, (x) => {
-      return map3(int(x), to_string2);
+      return map4(int(x), to_string2);
     }])
   );
   let name$2 = (() => {
@@ -601,7 +631,7 @@ function map_errors(result, f) {
   return map_error(
     result,
     (_capture) => {
-      return map2(_capture, f);
+      return map3(_capture, f);
     }
   );
 }
@@ -773,7 +803,7 @@ function bitcount(x) {
   x += x >> 16;
   return x & 127;
 }
-function index(bitmap, bit) {
+function index2(bitmap, bit) {
   return bitcount(bitmap & bit - 1);
 }
 function cloneAndSet(arr, at, val) {
@@ -894,7 +924,7 @@ function assocArray(root2, shift, hash, key, val, addedLeaf) {
 }
 function assocIndex(root2, shift, hash, key, val, addedLeaf) {
   const bit = bitpos(hash, shift);
-  const idx = index(root2.bitmap, bit);
+  const idx = index2(root2.bitmap, bit);
   if ((root2.bitmap & bit) !== 0) {
     const node = root2.array[idx];
     if (node.type !== ENTRY) {
@@ -1041,7 +1071,7 @@ function findIndex(root2, shift, hash, key) {
   if ((root2.bitmap & bit) === 0) {
     return void 0;
   }
-  const idx = index(root2.bitmap, bit);
+  const idx = index2(root2.bitmap, bit);
   const node = root2.array[idx];
   if (node.type !== ENTRY) {
     return find(node, shift + SHIFT, hash, key);
@@ -1134,7 +1164,7 @@ function withoutIndex(root2, shift, hash, key) {
   if ((root2.bitmap & bit) === 0) {
     return root2;
   }
-  const idx = index(root2.bitmap, bit);
+  const idx = index2(root2.bitmap, bit);
   const node = root2.array[idx];
   if (node.type !== ENTRY) {
     const n = without(node, shift + SHIFT, hash, key);
@@ -1610,24 +1640,19 @@ function inspect2(term) {
   return to_string3(_pipe);
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/io.mjs
-function debug(term) {
-  let _pipe = term;
-  let _pipe$1 = inspect2(_pipe);
-  print_debug(_pipe$1);
-  return term;
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/bool.mjs
-function guard(requirement, consequence, alternative) {
-  if (requirement) {
-    return consequence;
-  } else {
-    return alternative();
-  }
-}
-
 // build/dev/javascript/gleam_json/gleam_json_ffi.mjs
+function json_to_string(json) {
+  return JSON.stringify(json);
+}
+function object(entries) {
+  return Object.fromEntries(entries);
+}
+function identity2(x) {
+  return x;
+}
+function array(list2) {
+  return list2.toArray();
+}
 function decode(string3) {
   try {
     const result = JSON.parse(string3);
@@ -1747,6 +1772,40 @@ function do_decode(json, decoder) {
 }
 function decode3(json, decoder) {
   return do_decode(json, decoder);
+}
+function to_string5(json) {
+  return json_to_string(json);
+}
+function string2(input) {
+  return identity2(input);
+}
+function object2(entries) {
+  return object(entries);
+}
+function preprocessed_array(from3) {
+  return array(from3);
+}
+function array2(entries, inner_type) {
+  let _pipe = entries;
+  let _pipe$1 = map3(_pipe, inner_type);
+  return preprocessed_array(_pipe$1);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/io.mjs
+function debug(term) {
+  let _pipe = term;
+  let _pipe$1 = inspect2(_pipe);
+  print_debug(_pipe$1);
+  return term;
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/bool.mjs
+function guard(requirement, consequence, alternative) {
+  if (requirement) {
+    return consequence;
+  } else {
+    return alternative();
+  }
 }
 
 // build/dev/javascript/lustre/lustre/effect.mjs
@@ -2359,14 +2418,14 @@ function regex_submatches(pattern, string3) {
   let _pipe = pattern;
   let _pipe$1 = compile(_pipe, new Options(true, false));
   let _pipe$2 = nil_error(_pipe$1);
-  let _pipe$3 = map3(
+  let _pipe$3 = map4(
     _pipe$2,
     (_capture) => {
       return scan(_capture, string3);
     }
   );
   let _pipe$4 = try$(_pipe$3, first);
-  let _pipe$5 = map3(_pipe$4, (m) => {
+  let _pipe$5 = map4(_pipe$4, (m) => {
     return m.submatches;
   });
   return unwrap2(_pipe$5, toList([]));
@@ -2488,13 +2547,13 @@ function do_parse(uri_string) {
     let _pipe = fragment;
     let _pipe$1 = to_result(_pipe, void 0);
     let _pipe$2 = try$(_pipe$1, pop_grapheme2);
-    let _pipe$3 = map3(_pipe$2, second);
+    let _pipe$3 = map4(_pipe$2, second);
     return from_result(_pipe$3);
   })();
   let scheme$2 = (() => {
     let _pipe = scheme$1;
     let _pipe$1 = noneify_empty_string(_pipe);
-    return map(_pipe$1, lowercase2);
+    return map2(_pipe$1, lowercase2);
   })();
   return new Ok(
     new Uri(scheme$2, userinfo, host, port, path$1, query$1, fragment$1)
@@ -2503,7 +2562,7 @@ function do_parse(uri_string) {
 function parse2(uri_string) {
   return do_parse(uri_string);
 }
-function to_string5(uri) {
+function to_string6(uri) {
   let parts = (() => {
     let $ = uri.fragment;
     if ($ instanceof Some) {
@@ -2714,33 +2773,6 @@ var Response = class extends CustomType {
   }
 };
 
-// build/dev/javascript/gleam_javascript/ffi.mjs
-var PromiseLayer = class _PromiseLayer {
-  constructor(promise) {
-    this.promise = promise;
-  }
-  static wrap(value) {
-    return value instanceof Promise ? new _PromiseLayer(value) : value;
-  }
-  static unwrap(value) {
-    return value instanceof _PromiseLayer ? value.promise : value;
-  }
-};
-function resolve(value) {
-  return Promise.resolve(PromiseLayer.wrap(value));
-}
-function then(promise, fn) {
-  return promise.then((value) => fn(PromiseLayer.unwrap(value)));
-}
-function map_promise(promise, fn) {
-  return promise.then(
-    (value) => PromiseLayer.wrap(fn(PromiseLayer.unwrap(value)))
-  );
-}
-function rescue(promise, fn) {
-  return promise.catch((error) => fn(error));
-}
-
 // build/dev/javascript/gleam_javascript/gleam/javascript/promise.mjs
 function tap(promise, callback) {
   let _pipe = promise;
@@ -2784,7 +2816,7 @@ function from_fetch_response(response) {
   );
 }
 function to_fetch_request(request) {
-  let url = to_string5(to_uri(request));
+  let url = to_string6(to_uri(request));
   let method = method_to_string(request.method).toUpperCase();
   let options = {
     headers: make_headers(request.headers),
@@ -2960,13 +2992,14 @@ function prompt() {
 
 // build/dev/javascript/gl/gl.mjs
 var Model = class extends CustomType {
-  constructor(count, cat, loader, user, verified) {
+  constructor(count, cat, loader, user, verified, cb) {
     super();
     this.count = count;
     this.cat = cat;
     this.loader = loader;
     this.user = user;
     this.verified = verified;
+    this.cb = cb;
   }
 };
 var Cat = class extends CustomType {
@@ -3017,10 +3050,27 @@ var ApiReturnedCat = class extends CustomType {
     this[0] = x0;
   }
 };
-function main() {
-  return (_capture) => {
-    return new Ok(_capture);
-  };
+function convert_cat(cat) {
+  return [cat.id, toArray(cat.tags)];
+}
+function cat_to_json(cat) {
+  let _pipe = object2(
+    toList([
+      ["id", string2(cat.id)],
+      ["tags", array2(cat.tags, string2)]
+    ])
+  );
+  return to_string5(_pipe);
+}
+function cat_from_json(json_string) {
+  let cat_decoder = decode2(
+    (var0, var1) => {
+      return new Cat(var0, var1);
+    },
+    field("id", string),
+    field("tags", list(string))
+  );
+  return decode3(json_string, cat_decoder);
 }
 function read_localstorage2(key) {
   return batch(
@@ -3040,10 +3090,16 @@ function write_localstorage2(key, value) {
     return write_localstorage(key, value);
   });
 }
-function init2(_) {
+function init2(cb) {
   return [
-    new Model(0, new Cat("", toList([""])), false, new User(""), false),
-    batch(toList([read_localstorage2("user"), read_localstorage2("cat")]))
+    new Model(0, new Cat("", toList([""])), false, new User(""), false, cb),
+    batch(
+      toList([
+        read_localstorage2("user"),
+        read_localstorage2("cat"),
+        read_localstorage2("tags")
+      ])
+    )
   ];
 }
 function get_cat() {
@@ -3093,7 +3149,7 @@ function update2(model, msg) {
     } else {
       return [
         model.withFields({ cat, loader: false }),
-        write_localstorage2("cat", cat.id)
+        write_localstorage2("cat", cat_to_json(cat))
       ];
     }
   } else if (msg instanceof ApiReturnedCat && !msg[0].isOk()) {
@@ -3111,10 +3167,13 @@ function update2(model, msg) {
     if (key === "user") {
       return [model.withFields({ user: new User(message) }), none()];
     } else if (key === "cat") {
-      return [
-        model.withFields({ cat: new Cat(message, toList([])) }),
-        none()
-      ];
+      let $ = cat_from_json(message);
+      if ($.isOk()) {
+        let cat = $[0];
+        return [model.withFields({ cat }), none()];
+      } else {
+        return [model, none()];
+      }
     } else {
       return [model, none()];
     }
@@ -3126,6 +3185,7 @@ function update2(model, msg) {
   }
 }
 function view(model) {
+  model.cb(model);
   debug(model);
   let $ = model.user.name;
   if ($ === "") {
@@ -3151,7 +3211,7 @@ function view(model) {
           toList([
             div(
               toList([class$("p-1")]),
-              toList([text("Jello " + name)])
+              toList([text("Hello " + name)])
             ),
             button(
               toList([
@@ -3214,9 +3274,9 @@ function view(model) {
     );
   }
 }
-function start4(selector) {
+function start4(selector, cb) {
   let app = application(init2, update2, view);
-  return start3(app, selector, void 0);
+  return start3(app, selector, cb);
 }
 export {
   ApiReturnedCat,
@@ -3231,7 +3291,7 @@ export {
   UserGetCat,
   UserSignIn,
   UserSignOut,
-  main,
+  convert_cat,
   start4 as start,
   update2 as update,
   view
