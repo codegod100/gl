@@ -1378,6 +1378,22 @@ function do_concat(loop$lists, loop$acc) {
 function concat2(lists) {
   return do_concat(lists, toList([]));
 }
+function fold(loop$list, loop$initial, loop$fun) {
+  while (true) {
+    let list2 = loop$list;
+    let initial = loop$initial;
+    let fun = loop$fun;
+    if (list2.hasLength(0)) {
+      return initial;
+    } else {
+      let x = list2.head;
+      let rest$1 = list2.tail;
+      loop$list = rest$1;
+      loop$initial = fun(initial, x);
+      loop$fun = fun;
+    }
+  }
+}
 function do_repeat(loop$a, loop$times, loop$acc) {
   while (true) {
     let a = loop$a;
@@ -1757,6 +1773,18 @@ function from2(effect) {
 }
 function none() {
   return new Effect(toList([]));
+}
+function batch(effects) {
+  return new Effect(
+    fold(
+      effects,
+      toList([]),
+      (b, _use1) => {
+        let a = _use1.all;
+        return append(b, a);
+      }
+    )
+  );
 }
 
 // build/dev/javascript/lustre/lustre/internals/vdom.mjs
@@ -2303,9 +2331,6 @@ function start3(app, selector, flags) {
 // build/dev/javascript/lustre/lustre/element/html.mjs
 function text2(content) {
   return text(content);
-}
-function h1(attrs, children) {
-  return element("h1", attrs, children);
 }
 function div(attrs, children) {
   return element("div", attrs, children);
@@ -2931,13 +2956,26 @@ function expect_json(decoder, to_msg) {
   );
 }
 
+// build/dev/javascript/gl/gl.ffi.mjs
+function read_localstorage(key) {
+  const value = window.localStorage.getItem(key);
+  return value ? new Ok(value) : new Error(void 0);
+}
+function write_localstorage(key, value) {
+  window.localStorage.setItem(key, value);
+}
+function prompt() {
+  return window.prompt("username");
+}
+
 // build/dev/javascript/gl/gl.mjs
 var Model = class extends CustomType {
-  constructor(count, cat, loader) {
+  constructor(count, cat, loader, user) {
     super();
     this.count = count;
     this.cat = cat;
     this.loader = loader;
+    this.user = user;
   }
 };
 var Cat = class extends CustomType {
@@ -2945,6 +2983,12 @@ var Cat = class extends CustomType {
     super();
     this.id = id;
     this.tags = tags;
+  }
+};
+var User = class extends CustomType {
+  constructor(name) {
+    super();
+    this.name = name;
   }
 };
 var UserGetCat = class extends CustomType {
@@ -2959,14 +3003,26 @@ var Decrement = class extends CustomType {
 };
 var UserClearCat = class extends CustomType {
 };
+var UserSignIn = class extends CustomType {
+};
+var UserSignOut = class extends CustomType {
+};
+var CacheUpdatedMessage = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
 var ApiReturnedCat = class extends CustomType {
   constructor(x0) {
     super();
     this[0] = x0;
   }
 };
-function init2(_) {
-  return [new Model(0, new Cat("", toList([""])), false), none()];
+function write_localstorage2(key, value) {
+  return from2((_) => {
+    return write_localstorage(key, value);
+  });
 }
 function get_cat() {
   let decoder = decode2(
@@ -2984,6 +3040,29 @@ function get_cat() {
   );
   return get2("https://cataas.com/cat?json=true", expect);
 }
+function read_localstorage2(key) {
+  return batch(
+    toList([
+      from2(
+        (dispatch) => {
+          let _pipe = read_localstorage(key);
+          let _pipe$1 = new CacheUpdatedMessage(_pipe);
+          return dispatch(_pipe$1);
+        }
+      ),
+      get_cat()
+    ])
+  );
+}
+function init2(_) {
+  return [
+    new Model(0, new Cat("666", toList([""])), true, new User("")),
+    read_localstorage2("user")
+  ];
+}
+function sign_in(name) {
+  return batch(toList([get_cat(), write_localstorage2("user", name)]));
+}
 function update2(model, msg) {
   if (msg instanceof UserGetCat) {
     return [model.withFields({ loader: true }), get_cat()];
@@ -2991,6 +3070,17 @@ function update2(model, msg) {
     return [
       model.withFields({ cat: new Cat("cleared", toList([""])) }),
       none()
+    ];
+  } else if (msg instanceof UserSignIn) {
+    let name = prompt();
+    return [
+      model.withFields({ loader: true, user: new User(name) }),
+      sign_in(name)
+    ];
+  } else if (msg instanceof UserSignOut) {
+    return [
+      model.withFields({ user: new User("") }),
+      write_localstorage2("user", "")
     ];
   } else if (msg instanceof ApiReturnedCat && msg[0].isOk()) {
     let cat = msg[0][0];
@@ -3007,88 +3097,104 @@ function update2(model, msg) {
     return [model, none()];
   } else if (msg instanceof Increment) {
     return [model.withFields({ count: model.count + 42 }), none()];
-  } else {
+  } else if (msg instanceof Decrement) {
     let x = msg.x;
     return [model.withFields({ count: model.count - x }), none()];
+  } else if (msg instanceof CacheUpdatedMessage && msg[0].isOk()) {
+    let message = msg[0][0];
+    return [model.withFields({ user: new User(message) }), none()];
+  } else {
+    return [model, none()];
   }
 }
 function view(model) {
-  let count = to_string2(model.count);
-  return div(
-    toList([]),
-    toList([
-      h1(
-        toList([]),
-        toList([text("Element generated by gleam using lustre")])
-      ),
-      div(
-        toList([class$("flex mb-2")]),
-        toList([
-          button(
-            toList([
-              on_click(new Increment()),
-              class$("btn variant-filled")
-            ]),
-            toList([text("+")])
-          ),
-          div(
-            toList([class$("p-1")]),
-            toList([text(count)])
-          ),
-          button(
-            toList([
-              on_click(new Decrement(10)),
-              class$("btn variant-filled")
-            ]),
-            toList([text("-")])
-          ),
-          button(
-            toList([
-              on_click(new UserGetCat()),
-              class$("ml-1 btn variant-filled")
-            ]),
-            toList([text("get cat")])
-          ),
-          button(
-            toList([
-              on_click(new UserClearCat()),
-              class$("ml-1 btn variant-filled")
-            ]),
-            toList([text("clear cat")])
-          )
-        ])
-      ),
-      div(
-        toList([]),
-        toList([
-          (() => {
-            let $ = model.cat.id;
-            if ($ === "") {
-              return text2("no cat yet");
-            } else if ($ === "cleared") {
-              return text2("cat cleared");
-            } else {
-              let id = $;
-              let $1 = model.loader;
-              if ($1) {
-                return text2("loading...");
+  debug(model);
+  let $ = model.user.name;
+  if ($ === "") {
+    return div(
+      toList([]),
+      toList([
+        button(
+          toList([
+            on_click(new UserSignIn()),
+            class$("btn variant-filled")
+          ]),
+          toList([text("sign in")])
+        )
+      ])
+    );
+  } else {
+    let name = $;
+    return div(
+      toList([]),
+      toList([
+        div(
+          toList([class$("flex")]),
+          toList([
+            div(
+              toList([class$("p-1")]),
+              toList([text("Hello " + name)])
+            ),
+            button(
+              toList([
+                on_click(new UserSignOut()),
+                class$("btn variant-filled mb-1")
+              ]),
+              toList([text("sign out")])
+            )
+          ])
+        ),
+        div(
+          toList([class$("flex mb-2")]),
+          toList([
+            button(
+              toList([
+                on_click(new UserGetCat()),
+                class$("ml-1 btn variant-filled")
+              ]),
+              toList([text("get new cat")])
+            ),
+            button(
+              toList([
+                on_click(new UserClearCat()),
+                class$("ml-1 btn variant-filled")
+              ]),
+              toList([text("clear cat")])
+            )
+          ])
+        ),
+        div(
+          toList([]),
+          toList([
+            (() => {
+              let $1 = model.cat.id;
+              if ($1 === "") {
+                return text2("no cat yet");
+              } else if ($1 === "cleared") {
+                return text2("cat cleared");
               } else {
-                return div(
-                  toList([]),
-                  toList([
-                    img(
-                      toList([src("https://cataas.com/cat/" + id)])
-                    ),
-                    text(join2(model.cat.tags, " "))
-                  ])
-                );
+                let id = $1;
+                let $2 = model.loader;
+                if ($2) {
+                  return text2("loading...");
+                } else {
+                  return div(
+                    toList([]),
+                    toList([
+                      text(join2(model.cat.tags, " ")),
+                      img(
+                        toList([src("https://cataas.com/cat/" + id)])
+                      )
+                    ])
+                  );
+                }
               }
-            }
-          })()
-        ])
-      )
-    ])
-  );
+            })()
+          ])
+        )
+      ])
+    );
+  }
 }
 function main() {
   let app = application(init2, update2, view);
@@ -3097,7 +3203,7 @@ function main() {
     throw makeError(
       "assignment_no_match",
       "gl",
-      16,
+      15,
       "main",
       "Assignment pattern did not match",
       { value: $ }
