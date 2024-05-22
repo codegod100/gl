@@ -13,5 +13,4 @@
     });
 </script>
 
-<a href="/foo">CLick</a>
 <div id="app"></div>
