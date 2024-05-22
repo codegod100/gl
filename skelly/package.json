@@ -26,5 +26,10 @@
     "vite-plugin-tailwind-purgecss": "0.3.3",
     "@types/node": "20.12.12"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@paralleldrive/cuid2": "^2.2.2",
+    "sequelize": "^6.37.3",
+    "sqlite3": "^5.1.7"
+  }
 }

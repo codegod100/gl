@@ -33,3 +33,7 @@ export function write_localstorage(key, value) {
 export function prompt() {
     return window.prompt("username");
 }
+
+export function read_user(){
+    return document.cookie.split("=")[1]
+}

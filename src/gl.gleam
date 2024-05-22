@@ -1,3 +1,4 @@
+import foo
 import gleam/dynamic
 import gleam/io
 import gleam/javascript/array
@@ -14,6 +15,10 @@ import lustre_http
 pub fn start(selector: String, cb: fn(Model) -> Nil) {
   let app = lustre.application(init, update, view)
   lustre.start(app, selector, cb)
+}
+
+pub fn foo_start(selector, state) {
+  foo.start(selector, state)
 }
 
 pub fn convert_cat(cat: Cat) -> #(String, array.Array(String)) {
