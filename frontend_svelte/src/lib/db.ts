@@ -1,52 +1,43 @@
 import { Sequelize, DataTypes, Model } from "sequelize";
+import { Result } from "@badrap/result";
 const sequelize = new Sequelize({
 	dialect: "sqlite",
 	storage: "test.db",
 });
 
-class User extends Model {}
+class User extends Model {
+	declare username: string;
+	declare birthday: Date;
+	declare hash: string;
+}
 User.init(
 	{
 		username: DataTypes.STRING,
+		hash: DataTypes.STRING,
 		birthday: DataTypes.DATE,
 	},
 	{ sequelize, modelName: "User" },
 );
-// import { Sequelize, Table, Column, Model, HasMany } from "sequelize-typescript";
 
-// @Table
-// class User extends Model {
-// 	@Column
-// 	username: string;
-
-// 	@Column
-// 	birthday: Date;
-// }
-
-// type User = {
-// 	username: string;
-// 	birthday: string;
-// };
-// const UserTable = sequelize.define("User", {
-// 	username: DataTypes.STRING,
-// 	birthday: DataTypes.DATE,
-// });
-await sequelize.sync();
-export async function insert() {
+await sequelize.sync({ force: true });
+export async function insertUser({
+	username,
+	hash,
+}: { username: string; hash: string }) {
 	await User.create({
-		username: "janedoe",
-		birthday: "2000-01-01",
+		username,
+		hash,
 	});
 }
-export async function read() {
+export async function getAllUsers() {
 	return await User.findAll();
 }
 
-export async function getUser(): Promise<User> {
-	const record = await User.findOne({ where: { username: "janedoe" } });
+export async function getUser(username: string): Promise<Result<User, Error>> {
+	const record = await User.findOne({ where: { username } });
 	if (!record) {
-		throw "User not found";
+		return Result.err(new Error(`User ${username} not found in database`));
 	}
 
-	return record as User;
+	return Result.ok(record);
 }
