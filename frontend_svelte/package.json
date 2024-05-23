@@ -29,7 +29,9 @@
   "type": "module",
   "dependencies": {
     "@paralleldrive/cuid2": "^2.2.2",
+    "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.3",
+    "sequelize-typescript": "^2.1.6",
     "sqlite3": "^5.1.7"
   }
 }

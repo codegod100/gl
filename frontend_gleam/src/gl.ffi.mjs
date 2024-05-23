@@ -1,6 +1,6 @@
 import { Ok, Error } from "./gleam.mjs";
 import * as ed from '@noble/ed25519';
-import { Sequelize, DataTypes } from "sequelize";
+
 
 export async function sign(message) {
     message = message.buffer
@@ -39,24 +39,3 @@ export function read_user(){
     return document.cookie.split("=")[1]
 }
 
-export function new_database(dialect = "sqlite", storage = "test.db") {
-    const sequelize = new Sequelize({
-        dialect,
-        storage
-    });
-    return sequelize
-}
-
-export function define_table(db, table_name, args){
-    console.log(args)
-    for(const key in args) {
-        if(args[key] === "string"){
-            args[key] = DataTypes.STRING
-        }
-    }
-    db.define(table_name,args)
-}
-
-export async function sync_db(db) {
-    return await db.sync()
-}

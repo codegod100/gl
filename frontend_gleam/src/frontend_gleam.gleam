@@ -70,31 +70,6 @@ fn do_write_localstorage(_key: String, _value: String) -> Nil {
   Nil
 }
 
-pub type Sql {
-  Table
-  Database
-}
-
-@external(javascript, "./gl.ffi.mjs", "new_database")
-pub fn new_database(dialect: String, storage: String) -> Sql
-
-@external(javascript, "./gl.ffi.mjs", "define_table")
-pub fn define_table(
-  db: Sql,
-  table_name: String,
-  args: dict.Dict(string, string),
-) -> Sql
-
-@external(javascript, "./gl.ffi.mjs", "sync_db")
-pub fn sync_db(db: Sql) -> promise.Promise(Sql)
-
-pub fn make_new_db() {
-  let db = new_database("sqlite", "foo.db")
-
-  define_table(db, "User", dict.from_list([#("name", "string")]))
-  promise.await(sync_db(db), _)
-}
-
 pub type Model {
   Model(cat: Cat, loader: Bool)
 }
