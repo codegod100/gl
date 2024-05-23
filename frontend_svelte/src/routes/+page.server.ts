@@ -1,6 +1,6 @@
 import { getAllUsers, insertUser, getUser } from "$lib/db";
 import jsSHA from "jssha";
-import { error } from "@sveltejs/kit";
+import { error, fail } from "@sveltejs/kit";
 import { env } from "$env/dynamic/private";
 import * as jose from "jose";
 
@@ -15,12 +15,7 @@ export async function load({ cookies }) {
 	console.log({ payload });
 	const users = await getAllUsers();
 	return {
-		users: users.map((u) => {
-			return {
-				name: u.username,
-				birthday: u.birthday,
-			};
-		}),
+		user: { name: payload.user },
 	};
 }
 
@@ -42,17 +37,11 @@ export const actions = {
 		const password = data.get("password") as string;
 		if (data.get("logout") === "true") {
 			cookies.delete("token", { path: "/" });
-			return {};
+			return { message: "logged out" };
 		}
 		const hash = generateHash(password);
-		// console.log(
-		// 	"got form data",
-		// 	data.get("username"),
-		// 	password,
-		// 	generateHash(password),
-		// );
 		if (!username || !password) {
-			return error(400, "Missing username or password");
+			return fail(400, { error: "Missing username or password" });
 		}
 
 		const user = await getUser(username);
@@ -63,15 +52,14 @@ export const actions = {
 					.sign(secret);
 				console.log("jwt", jwt);
 				cookies.set("token", jwt, { path: "/" });
+				return { message: "logged in" };
 			}
-			console.log("user already exists");
-			return "user already exists";
+			return fail(400, { error: "Invalid password" });
 		}
 		await insertUser({
 			username,
 			hash,
 		});
-		// cookies.set("user", data.get("username"));
-		return {};
+		return { error: "" };
 	},
 };
