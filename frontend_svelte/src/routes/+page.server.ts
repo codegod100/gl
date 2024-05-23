@@ -11,12 +11,6 @@ export async function load({ cookies }) {
 	if (!jwt) {
 		return {};
 	}
-	const { payload, protectedHeader } = await jose.jwtVerify(jwt, secret);
-	console.log({ payload });
-	const users = await getAllUsers();
-	return {
-		user: { name: payload.user },
-	};
 }
 
 function generateHash(password: string) {

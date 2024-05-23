@@ -27,6 +27,7 @@ export async function insertUser({
 	await User.create({
 		username,
 		hash,
+		birthday: new Date(),
 	});
 }
 export async function getAllUsers() {

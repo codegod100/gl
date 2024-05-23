@@ -10,15 +10,7 @@
 </script>
 
 <div class="mt-1">
-    {#if data.user}
-        Hello {data.user.name}
-        <form method="POST" action="/">
-            <input type="hidden" name="logout" value="true" />
-            <button type="submit" class="btn variant-filled mb-1">Logout</button
-            >
-        </form>
-        <a href="/cat">Go cat</a>
-    {:else}
+    {#if !data.user}
         <div>{form?.error || ""}</div>
         <form method="POST" action="/">
             <input
@@ -35,5 +27,8 @@
             />
             <button type="submit" class="btn variant-filled">Login</button>
         </form>
+    {:else}
+        <div>Sup {data.user.name}</div>
+        <div>Main page <a class="anchor" href="/cat">Go cat</a></div>
     {/if}
 </div>
