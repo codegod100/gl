@@ -29,6 +29,6 @@
         </form>
     {:else}
         <div>Sup {data.user.name}</div>
-        <div>Main page <a class="anchor" href="/cat">Go cat</a></div>
+        <div>Main page <a class="anchor" href="/game">Go game</a></div>
     {/if}
 </div>

@@ -11,7 +11,7 @@ export async function load({ cookies, request, url }) {
 	if (!jwt) {
 		console.log(url.pathname);
 		if (url.pathname !== "/") {
-			return redirect(301, "/");
+			// return redirect(301, "/");
 		}
 		return {};
 	}
@@ -26,6 +26,6 @@ export async function load({ cookies, request, url }) {
 			user: { name: payload.user, birthday: user_result.unwrap().birthday },
 		};
 	} catch (e) {
-		return error(500, "corrupted token");
+		return error(500, (e as Error).message);
 	}
 }
