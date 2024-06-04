@@ -7,6 +7,7 @@
   } from "@simplewebauthn/browser";
   import type { Passkey } from "$lib/passkey";
   export let data;
+  let verified = false;
   let passkey: Passkey;
 
   async function register() {
@@ -21,7 +22,7 @@
     try {
       const auth = await startAuthentication(data.authOptions, true);
       console.log({ auth });
-      await fetch("/verify_auth", {
+      const res = await fetch("/verify_auth", {
         method: "POST",
         body: JSON.stringify({
           authOptions: data.authOptions,
@@ -30,6 +31,10 @@
           username: data.user.username,
         }),
       });
+      verified = (await res.json()) as boolean;
+      console.log({ verified });
+      if (verified) {
+      }
     } catch (e) {
       console.log("we got an error", e);
     }
@@ -42,3 +47,4 @@
 <input type="text" name="username" class="input" autocomplete="webauthn" />
 <!-- <button class="btn variant-filled" on:click={authenticate}>Authenticate</button> -->
 <button class="btn variant-filled" on:click={register}>Register</button>
+<div>Verified: {verified}</div>

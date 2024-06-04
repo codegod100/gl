@@ -16,12 +16,13 @@ export async function POST({ request }) {
     }
     console.log("BUFFER")
     console.log(passkey.publicKey.buffer)
-    const verify = await verifyAuthenticationResponse({
+    const { verified } = await verifyAuthenticationResponse({
         response: data.auth,
         expectedChallenge: data.authOptions.challenge,
         expectedOrigin: "http://localhost:5173",
         expectedRPID: "localhost",
         authenticator: { credentialID: passkey.id.toString(), credentialPublicKey: passkey.publicKey, counter: passkey.counter, transports: passkey.transports },
     })
-    return Response.json({ verify })
+    console.log({ verified })
+    return Response.json(verified)
 }
