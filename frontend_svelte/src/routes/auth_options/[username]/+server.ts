@@ -16,20 +16,18 @@ import type {
 
 import { User, getUser, getPasskeyByUserID, type Passkey } from "$lib/db";
 
+import { error } from "@sveltejs/kit";
+
 const rpID = "localhost";
 
 export async function GET({ params }) {
     const user = await getUser(params.username);
     if (user instanceof Error) {
-        return new Response(user.message, {
-            status: 404
-        })
+        return error(400, "User not found")
     }
     const passkey = await getPasskeyByUserID(user.id);
     if (passkey instanceof Error) {
-        return new Response(passkey.message, {
-            status: 404
-        })
+        return error(400, "Passkey not found")
     }
     const userPasskeys = (id: number): Passkey[] => {
         if (passkey instanceof Error) {

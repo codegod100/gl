@@ -18,28 +18,27 @@
     });
   }
   async function authenticate() {
-    const res = await fetch(`/auth_options/${username}`);
-    const { authOptions, passkey } = await res.json();
+    let res = await fetch(`/auth_options/${username}`);
+    const { authOptions, passkey, message } = await res.json();
+    if (res.status !== 200) {
+      alert(message);
+    }
     console.log({ authOptions });
-    try {
-      console.log("before call");
-      const auth = await startAuthentication(authOptions);
-      console.log("after call");
-      console.log({ auth });
-      const res = await fetch("/verify_auth", {
-        method: "POST",
-        body: JSON.stringify({
-          authOptions: authOptions,
-          auth,
-          passkey: passkey,
-        }),
-      });
-      verified = (await res.json()) as boolean;
-      console.log({ verified });
-      if (verified) {
-      }
-    } catch (e) {
-      console.log("we got an error", e);
+    console.log("before call");
+    const auth = await startAuthentication(authOptions);
+    console.log("after call");
+    console.log({ auth });
+    res = await fetch("/verify_auth", {
+      method: "POST",
+      body: JSON.stringify({
+        authOptions: authOptions,
+        auth,
+        passkey: passkey,
+      }),
+    });
+    verified = (await res.json()) as boolean;
+    console.log({ verified });
+    if (verified) {
     }
   }
 
