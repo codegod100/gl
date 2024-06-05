@@ -1,9 +1,9 @@
 <script>
-	import "../app.postcss";
-	export let data;
+  import "../app.postcss";
+  export let data;
 </script>
 
-{#if data.user}
+<!-- {#if data.user}
 	<div class="flex">
 		<div class="mr-5 text-2xl">Hello {data.user.name}</div>
 		<form method="POST" action="/">
@@ -13,5 +13,5 @@
 			>
 		</form>
 	</div>
-{/if}
+{/if} -->
 <slot />

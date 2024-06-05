@@ -47,7 +47,8 @@ export async function POST({ request }) {
         backedUp: credentialBackedUp,
         // `body` here is from Step 2
         transports: data.reg.transports,
-        user_id: user.id
+        user_id: user.id,
+        b64id: credentialID
     })
     await user.save()
     return Response.json({})

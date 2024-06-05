@@ -14,7 +14,7 @@ const sequelize = new Sequelize({
 
 
 
-class User extends Model {
+export class User extends Model {
 	declare username: string;
 	declare birthday: Date;
 	declare hash: string;
@@ -37,12 +37,12 @@ User.init(
 
 export class Passkey extends Model {
 	declare id: number;
+	declare b64id: string;
 	declare webauthnUserID: Base64URLString;
 	declare publicKey: Buffer;
 	declare counter: number;
 	declare deviceType: CredentialDeviceType;
 	declare backedUp: boolean;
-	declare transports: AuthenticatorTransportFuture[];
 	declare user_id: number;
 }
 Passkey.init(
@@ -61,12 +61,12 @@ Passkey.init(
 				key: "id",
 			},
 		},
+		b64id: DataTypes.STRING,
 		webauthnUserID: DataTypes.STRING,
 		publicKey: DataTypes.BLOB,
 		counter: DataTypes.INTEGER,
 		deviceType: DataTypes.STRING,
 		backedUp: DataTypes.BOOLEAN,
-		transports: DataTypes.STRING,
 	},
 	{ sequelize, modelName: "Passkey" },
 );
@@ -90,6 +90,7 @@ export async function insertPasskey({
 	backedUp,
 	transports,
 	user_id,
+	b64id,
 }: {
 	webauthnUserID: Base64URLString;
 	publicKey: Buffer;
@@ -98,6 +99,7 @@ export async function insertPasskey({
 	backedUp: boolean;
 	transports?: AuthenticatorTransportFuture[];
 	user_id: number;
+	b64id: string;
 }) {
 	await Passkey.create({
 		webauthnUserID,
@@ -107,6 +109,7 @@ export async function insertPasskey({
 		backedUp,
 		transports,
 		user_id,
+		b64id
 	});
 }
 

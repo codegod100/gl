@@ -1,28 +1,28 @@
 import {
     verifyAuthenticationResponse,
 } from "@simplewebauthn/server";
+
 import type { AuthenticationResponseJSON, PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/types';
 import { getUser, getPasskeyByUserID } from "$lib/db.js";
 
 export async function POST({ request }) {
-    const data = await request.json() as { auth: AuthenticationResponseJSON, authOptions: PublicKeyCredentialRequestOptionsJSON, username: string };
-    const user = await getUser(data.username)
-    if (user instanceof Error) {
-        return Response.error()
+    console.log("in auth")
+    const data = await request.json()
+    console.log({ data })
+    const publicKey = Buffer.from(data.passkey.publicKeyStr, "base64")
+    try {
+        const res = await verifyAuthenticationResponse({
+            response: data.auth,
+            expectedChallenge: data.authOptions.challenge,
+            expectedOrigin: "http://localhost:5173",
+            expectedRPID: "localhost",
+            authenticator: { credentialID: data.passkey.id, credentialPublicKey: publicKey, counter: data.passkey.counter, transports: data.passkey.transports },
+        })
+        console.log({ res })
+        return Response.json(res.verified)
+    } catch (e) {
+        console.log({ e })
+        return Response.json(false)
     }
-    const passkey = await getPasskeyByUserID(user.id)
-    if (passkey instanceof Error) {
-        return Response.error()
-    }
-    console.log("BUFFER")
-    console.log(passkey.publicKey.buffer)
-    const { verified } = await verifyAuthenticationResponse({
-        response: data.auth,
-        expectedChallenge: data.authOptions.challenge,
-        expectedOrigin: "http://localhost:5173",
-        expectedRPID: "localhost",
-        authenticator: { credentialID: passkey.id.toString(), credentialPublicKey: passkey.publicKey, counter: passkey.counter, transports: passkey.transports },
-    })
-    console.log({ verified })
-    return Response.json(verified)
+
 }
