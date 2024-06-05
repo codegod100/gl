@@ -11,11 +11,23 @@
   let verified = false;
   let username = "";
   async function register() {
-    const reg = await startRegistration(data.options);
-    const p = await fetch("/verify_registration", {
-      method: "POST",
-      body: JSON.stringify({ options: data.options, reg }),
-    });
+    const res = await fetch(`/reg_options/${username}`);
+    const { options, passkey, message } = await res.json();
+    if (res.status !== 200) {
+      alert(message);
+    }
+    try {
+      const reg = await startRegistration(options);
+      await fetch("/verify_registration", {
+        method: "POST",
+        body: JSON.stringify({ options, reg }),
+      });
+    } catch (e) {
+      if (e.name === "InvalidStateError") {
+        return alert("Already registered");
+      }
+      alert(e);
+    }
   }
   async function authenticate() {
     let res = await fetch(`/auth_options/${username}`);
