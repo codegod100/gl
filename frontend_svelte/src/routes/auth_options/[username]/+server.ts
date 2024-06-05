@@ -47,6 +47,9 @@ export async function GET({ params }) {
 
     const publicKeyStr = passkey.publicKey.toString("base64");
 
+
+
+
     return Response.json({
         authOptions, passkey: {
             id: passkey.b64id,

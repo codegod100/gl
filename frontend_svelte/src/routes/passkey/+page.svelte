@@ -23,10 +23,10 @@
         body: JSON.stringify({ options, reg }),
       });
     } catch (e) {
+      console.log(e);
       if (e.name === "InvalidStateError") {
         return alert("Already registered");
       }
-      alert(e);
     }
   }
   async function authenticate() {
@@ -37,17 +37,27 @@
     }
     console.log({ authOptions });
     console.log("before call");
-    const auth = await startAuthentication(authOptions);
-    console.log("after call");
-    console.log({ auth });
-    res = await fetch("/verify_auth", {
-      method: "POST",
-      body: JSON.stringify({
-        authOptions: authOptions,
-        auth,
-        passkey: passkey,
-      }),
-    });
+    try {
+      const auth = await startAuthentication(authOptions);
+      console.log("after call");
+      console.log({ auth });
+      res = await fetch("/verify_auth", {
+        method: "POST",
+        body: JSON.stringify({
+          authOptions: authOptions,
+          auth,
+          passkey: passkey,
+        }),
+      });
+    } catch (e) {
+      console.log(e);
+      if (e.name === "NotAllowedError") {
+        return;
+        // return alert("User cancelled");
+      }
+      // alert(e);
+    }
+
     verified = (await res.json()) as boolean;
     console.log({ verified });
     if (verified) {
@@ -83,7 +93,6 @@
   autocomplete="webauthn"
   bind:value={username}
 />
-<!-- <button class="btn variant-filled" on:click={authenticate}>Authenticate</button> -->
 <div>
   <button class="btn variant-filled" on:click={authenticate}
     >Authenticate</button
