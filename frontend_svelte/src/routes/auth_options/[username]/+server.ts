@@ -40,6 +40,7 @@ export async function GET({ params, url }) {
         }
         return [passkey];
     }
+    console.log({ challenge })
     const authOptions: PublicKeyCredentialRequestOptionsJSON =
         await generateAuthenticationOptions({
             challenge,
@@ -50,7 +51,7 @@ export async function GET({ params, url }) {
                 // transports: passkey.transports,
             })),
         });
-
+    console.log({ chal: authOptions.challenge })
     const publicKeyStr = passkey.publicKey.toString("base64");
 
 

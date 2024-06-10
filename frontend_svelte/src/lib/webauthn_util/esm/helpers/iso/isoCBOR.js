@@ -18,12 +18,9 @@ import { tinyCbor } from '../../deps.js';
  */
 export function decodeFirst(input) {
     // Make a copy so we don't mutate the original
-    console.log(input instanceof Uint8Array)
     const _input = new Uint8Array(input);
-    console.log(_input instanceof Uint8Array)
     const decoded = tinyCbor.decodePartialCBOR(_input, 0);
     const [first] = decoded;
-    console.log(first)
     return first;
 }
 /**

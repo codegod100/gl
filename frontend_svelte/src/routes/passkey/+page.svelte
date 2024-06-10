@@ -37,13 +37,12 @@
     }
     try {
       const auth = await startAuthentication(authOptions);
-      console.log("SIGNATURE", auth.response.signature);
       res = await fetch("/verify_auth", {
         method: "POST",
         body: JSON.stringify({
-          authOptions: authOptions,
+          authOptions,
           auth,
-          passkey: passkey,
+          passkey,
         }),
       });
     } catch (e) {

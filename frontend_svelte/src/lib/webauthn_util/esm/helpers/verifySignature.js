@@ -14,7 +14,6 @@ export function verifySignature(opts) {
     }
     let cosePublicKey = new Map();
     if (credentialPublicKey) {
-        console.log("CREDENTIAL KEY")
         cosePublicKey = decodeCredentialPublicKey(credentialPublicKey);
     }
     else if (x509Certificate) {
