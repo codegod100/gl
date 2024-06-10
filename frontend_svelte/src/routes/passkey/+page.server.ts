@@ -1,5 +1,5 @@
 import SimpleWebAuthnServer from "@simplewebauthn/server";
-import { getPasskeyByUserID } from "$lib/db";
+import { getPasskeyByUserID, Session, User } from "$lib/db";
 import { User, type Passkey } from "$lib/db";
 import {
 	generateRegistrationOptions,
@@ -24,8 +24,18 @@ import { error } from "@sveltejs/kit";
 
 
 
-export async function load() {
+export async function load({ cookies }) {
+	const session_id = cookies.get("session_id")
+	if (session_id) {
+		const session = await Session.findOne({ where: { id: session_id } })
+		if (session) {
+			const user = await User.findOne({ where: { id: session.user_id } })
+			if (user instanceof User) {
+				return ({ username: user.username })
 
+			}
+		}
+	}
 
 
 

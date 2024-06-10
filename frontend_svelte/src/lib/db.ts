@@ -39,6 +39,20 @@ User.init(
 	{ sequelize, modelName: "User" },
 );
 
+export class Session extends Model {
+	declare id: string;
+	declare user_id: number;
+}
+Session.init({
+	id: {
+		type: DataTypes.STRING,
+		allowNull: false,
+		primaryKey: true,
+	},
+	user_id: DataTypes.INTEGER
+},
+	{ sequelize, modelName: "Session" },)
+
 export class Passkey extends Model {
 	declare id: number;
 	declare b64id: string;
@@ -119,6 +133,13 @@ export async function insertPasskey({
 
 export async function getPasskeyByUserID(id: number): Promise<Passkey | Error> {
 	const record = await Passkey.findOne({ where: { user_id: id } });
+	if (!record) {
+		return new Error("Passkey not found")
+	}
+	return record
+}
+export async function getPasskeyByPublicKey(key: Buffer): Promise<Passkey | Error> {
+	const record = await Passkey.findOne({ where: { publicKey: key } })
 	if (!record) {
 		return new Error("Passkey not found")
 	}

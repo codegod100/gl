@@ -3,8 +3,9 @@ import {
 } from "@simplewebauthn/server";
 
 import type { AuthenticationResponseJSON, PublicKeyCredentialRequestOptionsJSON, AuthenticatorAssertionResponseJSON } from '@simplewebauthn/types';
-import { getUser, getPasskeyByUserID } from "$lib/db.js";
+import { getUser, getPasskeyByUserID, Session, getPasskeyByPublicKey } from "$lib/db.js";
 import { verifySignature, isoBase64URL, isoUint8Array, toHash } from "$lib/webauthn_util"
+import { v4 } from "uuid"
 
 async function verify(response: AuthenticatorAssertionResponseJSON, publicKey: Buffer) {
     const authDataBuffer = isoBase64URL.toBuffer(
@@ -20,7 +21,7 @@ async function verify(response: AuthenticatorAssertionResponseJSON, publicKey: B
     const credentialPublicKey = publicKey
     return await verifySignature({ signature, data, credentialPublicKey })
 }
-export async function POST({ request }) {
+export async function POST({ request, cookies }) {
     const data = await request.json()
     const publicKey = Buffer.from(data.passkey.publicKeyStr, "base64")
     const response: AuthenticationResponseJSON = data.auth
@@ -38,6 +39,16 @@ export async function POST({ request }) {
         })
 
         console.log({ res })
+        if (res.verified) {
+            const passkey = await getPasskeyByPublicKey(publicKey)
+            if (passkey instanceof Error) {
+                return Response.json(false)
+            }
+            const id = v4()
+            const user_id = passkey.user_id
+            await Session.create({ id, user_id })
+            cookies.set("session_id", id, { path: "/" })
+        }
         return Response.json(res.verified)
     } catch (e) {
         console.log({ e })

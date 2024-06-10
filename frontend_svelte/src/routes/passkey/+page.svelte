@@ -7,6 +7,7 @@
     startAuthentication,
   } from "@simplewebauthn/browser";
   import type { Passkey } from "$lib/passkey";
+  import { invalidateAll } from "$app/navigation";
   export let data;
   let verified = false;
   let username = "";
@@ -43,6 +44,7 @@
           authOptions,
           auth,
           passkey,
+          username,
         }),
       });
     } catch (e) {
@@ -55,6 +57,7 @@
 
     verified = (await res.json()) as boolean;
     if (verified) {
+      invalidateAll();
     }
   }
 
@@ -78,17 +81,21 @@
   });
 </script>
 
-<input
-  type="text"
-  name="username"
-  class="input"
-  autocomplete="webauthn"
-  bind:value={username}
-/>
-<div>
-  <button class="btn variant-filled" on:click={authenticate}
-    >Authenticate</button
-  >
-</div>
-<button class="btn variant-filled" on:click={register}>Register</button>
-<div>Verified: {verified}</div>
+{#if data.username}
+  <div>Hello {data.username}, you're logged into a session</div>
+{:else}
+  <input
+    type="text"
+    name="username"
+    class="input"
+    autocomplete="webauthn"
+    bind:value={username}
+  />
+  <div>
+    <button class="btn variant-filled" on:click={authenticate}
+      >Authenticate</button
+    >
+  </div>
+  <button class="btn variant-filled" on:click={register}>Register</button>
+  <div>Verified: {verified}</div>
+{/if}
