@@ -19,6 +19,8 @@ export class User extends Model {
 	declare birthday: Date;
 	declare hash: string;
 	declare id: number;
+	// declare publicKey: JsonWebKey;
+	declare privateKey: JsonWebKey;
 }
 User.init(
 	{
@@ -31,6 +33,8 @@ User.init(
 		username: DataTypes.STRING,
 		hash: DataTypes.STRING,
 		birthday: DataTypes.DATE,
+		// publicKey: DataTypes.JSON,
+		privateKey: DataTypes.JSON,
 	},
 	{ sequelize, modelName: "User" },
 );

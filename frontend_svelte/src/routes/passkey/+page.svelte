@@ -30,17 +30,14 @@
     }
   }
   async function authenticate() {
-    let res = await fetch(`/auth_options/${username}`);
+    let res = await fetch(`/auth_options/${username}?challenge=fooo`);
     const { authOptions, passkey, message } = await res.json();
     if (res.status !== 200) {
       alert(message);
     }
-    console.log({ authOptions });
-    console.log("before call");
     try {
       const auth = await startAuthentication(authOptions);
-      console.log("after call");
-      console.log({ auth });
+      console.log("SIGNATURE", auth.response.signature);
       res = await fetch("/verify_auth", {
         method: "POST",
         body: JSON.stringify({
@@ -50,7 +47,6 @@
         }),
       });
     } catch (e) {
-      console.log(e);
       if (e.name === "NotAllowedError") {
         return;
         // return alert("User cancelled");
@@ -59,19 +55,16 @@
     }
 
     verified = (await res.json()) as boolean;
-    console.log({ verified });
     if (verified) {
     }
   }
 
   onMount(async () => {
-    console.log({ data });
     // const passkey = await getPasskey();
     // if (passkey instanceof Error) {
     //   return Response.error();
     // }
     if (!data.passKeyError) {
-      console.log("authenticating");
       // await authenticate();
     }
 

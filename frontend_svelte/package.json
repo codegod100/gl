@@ -30,9 +30,12 @@
   },
   "type": "module",
   "dependencies": {
+    "@extism/extism": "^1.0.3",
     "@paralleldrive/cuid2": "^2.2.2",
     "@simplewebauthn/browser": "^10.0.0",
     "@simplewebauthn/server": "^10.0.0",
+    "@sveu/browser": "^1.0.1",
+    "@wasmer/sdk": "^0.6.0",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "jose": "^5.3.0",
@@ -42,6 +45,7 @@
     "pixi.js": "^8.1.5",
     "sequelize": "^6.37.3",
     "sequelize-typescript": "^2.1.6",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "wasi": "^0.0.6"
   }
 }

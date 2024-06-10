@@ -19,8 +19,13 @@ import { User, getUser, getPasskeyByUserID, type Passkey } from "$lib/db";
 import { error } from "@sveltejs/kit";
 
 const rpID = "localhost";
+let challenge: string | undefined
+export async function GET({ params, url }) {
 
-export async function GET({ params }) {
+    const c = url.searchParams.get("challenge")
+    if (c) {
+        challenge = c
+    }
     const user = await getUser(params.username);
     if (user instanceof Error) {
         return error(400, "User not found")
@@ -37,6 +42,7 @@ export async function GET({ params }) {
     }
     const authOptions: PublicKeyCredentialRequestOptionsJSON =
         await generateAuthenticationOptions({
+            challenge,
             rpID,
             // Require users to use a previously-registered authenticator
             allowCredentials: userPasskeys(user.id).map((passkey) => ({

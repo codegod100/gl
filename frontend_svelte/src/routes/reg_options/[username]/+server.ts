@@ -26,9 +26,9 @@ export async function GET({ params }) {
         return error(400, "User not found")
     }
     const passkey = await getPasskeyByUserID(user.id);
-    if (passkey instanceof Error) {
-        return error(400, "Passkey not found")
-    }
+    // if (passkey instanceof Error) {
+    //     return error(400, "Passkey not found")
+    // }
     const userPasskeys = (id: number): Passkey[] => {
         if (passkey instanceof Error) {
             return [];
@@ -60,13 +60,9 @@ export async function GET({ params }) {
             },
         });
 
-    const publicKeyStr = passkey.publicKey.toString("base64");
+    // const publicKeyStr = passkey.publicKey.toString("base64");
 
     return Response.json({
-        options, passkey: {
-            id: passkey.b64id,
-            publicKeyStr: publicKeyStr,
-            counter: passkey.counter,
-        }
+        options
     })
 }
