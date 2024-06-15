@@ -172,7 +172,7 @@ export function getUser(username: string): Effect.Effect<User, Error> {
 			return user
 		},
 		catch: (e) => e as Error
-	})
+	}).pipe(Effect.withSpan("getting user"))
 
 
 

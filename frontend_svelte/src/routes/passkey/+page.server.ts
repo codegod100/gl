@@ -1,6 +1,5 @@
 import SimpleWebAuthnServer from "@simplewebauthn/server";
 import { getPasskeyByUserID, Session, User } from "$lib/db";
-import { User, type Passkey } from "$lib/db";
 import {
 	generateRegistrationOptions,
 	verifyRegistrationResponse,
