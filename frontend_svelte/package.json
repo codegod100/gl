@@ -38,6 +38,7 @@
     "@wasmer/sdk": "^0.6.0",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
+    "effect": "^3.3.2",
     "jose": "^5.3.0",
     "jssha": "^3.3.1",
     "localstorage-slim": "^2.7.1",

@@ -1,5 +1,6 @@
 import { Sequelize, DataTypes, Model } from "sequelize";
 import { Result } from "$lib/result"
+import { Effect } from "effect"
 import type {
 	AuthenticatorTransportFuture,
 	CredentialDeviceType,
@@ -131,29 +132,50 @@ export async function insertPasskey({
 	});
 }
 
-export async function getPasskeyByUserID(id: number): Promise<Passkey | Error> {
-	const record = await Passkey.findOne({ where: { user_id: id } });
-	if (!record) {
-		return new Error("Passkey not found")
-	}
-	return record
-}
-export async function getPasskeyByPublicKey(key: Buffer): Promise<Passkey | Error> {
-	const record = await Passkey.findOne({ where: { publicKey: key } })
-	if (!record) {
-		return new Error("Passkey not found")
-	}
-	return record
+export function getPasskeyByUserID(id: number): Effect.Effect<Passkey, Error> {
+	return Effect.tryPromise({
+		try: async () => {
+			const record = await Passkey.findOne({ where: { user_id: id } });
+			if (!record) {
+				throw new Error("Passkey not found")
+			}
+			return record
+		}, catch: (e) => e as Error
+	})
+
 }
 
-export async function getAllUsers() {
-	return await User.findAll();
+export function getPasskeyByPublicKey(key: Buffer): Effect.Effect<Passkey, Error> {
+	return Effect.tryPromise({
+		try: async () => {
+			const record = await Passkey.findOne({ where: { publicKey: key } })
+			if (!record) {
+				throw new Error("Passkey not found")
+			}
+			return record
+		},
+		catch: (e) => e as Error
+	})
 }
 
-export async function getUser(username: string): Promise<User | Error> {
-	const record = await User.findOne({ where: { username } });
-	if (!record) {
-		return new Error("User not found")
-	}
-	return record
+export function getAllUsers(): Effect.Effect<User[]> {
+	return Effect.promise(() => User.findAll())
 }
+
+export function getUser(username: string): Effect.Effect<User, Error> {
+	return Effect.tryPromise({
+		try: async () => {
+			const user = await User.findOne({ where: { username } })
+			if (!user) {
+				throw new Error(`${username} not found in database`)
+			}
+			return user
+		},
+		catch: (e) => e as Error
+	})
+
+
+
+}
+
+
